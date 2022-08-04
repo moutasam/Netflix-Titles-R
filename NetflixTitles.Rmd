@@ -1,0 +1,293 @@
+---
+title: "Netflic Titles"
+output: html_notebook
+---
+
+# This is an EDA project in R , using netflix titles data set downloaded from kaggel throught the URL : https://www.kaggle.com/datasets/shivamb/netflix-shows/download?datasetVersionNumber=5 
+
+```{r}
+# reading the dataset and filling any emprty cell with the value NA
+
+NFTitles <- read.csv(file ='netflix_titles.csv', na.strings=c("","NA"))
+
+
+```
+
+
+```{r}
+library(tidyverse)
+
+# showing data values and count using the glimpse function
+glimpse(NFTitles)
+
+# summurizing the dataset
+summary(NFTitles)
+
+```
+
+
+```{r}
+# since show id column is not usefull we drop it from our dataset
+
+NFTitles = subset(NFTitles, select = -c(show_id, description) )
+
+# then we check for th missing values
+
+```
+
+
+```{r}
+
+# getting the total number of null values in the dataset
+sapply(NFTitles, function(x) sum(is.na(x)))
+
+```
+
+
+```{r}
+# drop any duplicate values
+NFTitles=distinct(NFTitles,title,country,type,release_year, .keep_all= TRUE)
+
+# delete unwanted rating values
+
+NFTitles = filter(NFTitles, !(rating %in% c("66 min", "74 min","84 min")))
+
+
+```
+
+
+```{r}
+# explore the data
+
+# group data by type
+
+library(ggplot2)
+library(ggthemes)
+library(forcats)
+library(extrafont)
+library(plotly)
+library(dplyr)
+library(tidytext)
+library(tidyr)
+library(stringr)
+
+
+# groupong titles by type : movies or tv shows
+
+T_by_type <- NFTitles %>% group_by(type) %>% summarise(count = n())
+
+
+# plot the titles by type
+
+T_by_type %>%
+  ggplot() + geom_col(aes(x = type, y = count, fill = type)) +
+    labs(title = "Netflix Titles By Type",
+        caption = 'Data Source: Kaggle') +  xlab("Type") + ylab("Count") + theme_classic()
+ 
+    
+# split all listed in types and count all of them seperatley
+
+T_by_listedin <-  NFTitles %>% select(listed_in) %>%
+ mutate(listed_in = str_split(listed_in,',')) %>%
+ unnest(listed_in) %>% group_by(listed_in) %>% summarise(count = n()) 
+
+
+# Plot titles by genre
+
+# top 20
+
+T_by_listedin %>% arrange(desc(count)) %>%head(20) %>%
+ggplot() + geom_col(aes( x = count , y =reorder(listed_in, count))) +
+ labs(title = 'Top 20 Genre of Titles',
+     x = 'Number of Titles',
+     y = 'Genre') + theme_classic()  + xlim(0, 3000)
+
+# top 20
+
+T_by_listedin %>% arrange((count)) %>%head(20) %>%
+ggplot() + geom_col(aes( x = count , y =reorder(listed_in, count))) +
+ labs(title = 'Least 20 Genre of Titles',
+     x = 'Number of Titles',
+     y = 'Genre') + theme_classic()  + xlim(0, 40)
+  
+# Movies produced are mor than double tv shows
+
+#We see that International Movies / TV Shows are showing up as the dominant category in both Movies and TV Shows, followed by Dramas and Comedies ,
+
+# the least desired genres in movies are  LGBTQ , sports and sci ficntion & fantasy
+# where in tv shows are : classic and cult ,stand up comedy and sci-fy and fanatsy
+
+
+
+```
+
+
+```{r}
+
+# analysis by country 
+
+
+
+
+# creates a country list
+CountryLst <- strsplit(NFTitles$country, split = ", ")
+
+# over ride dyplr group msg
+options(dplyr.summarise.inform = FALSE)
+
+# get all types by country
+Type_Countries <- na.omit(data.frame(type = rep(NFTitles$type, sapply(CountryLst, length)), country = unlist(CountryLst))) %>% 
+  group_by(country, type) %>%
+  summarise(count = n())
+
+CountriesFinal <- reshape(data=data.frame(Type_Countries),idvar="country",
+                          v.names = "count",
+                          timevar = "type",
+                          direction="wide") %>% arrange(desc(count.Movie)) %>%
+                          top_n(20)
+
+  
+# plot county by type and count 
+
+#rename count columns
+names(CountriesFinal)[2] <- "movie_count"
+names(CountriesFinal)[3] <- "tvshow_count"
+
+
+fig <- plot_ly(CountriesFinal, x = CountriesFinal$country, y = ~movie_count, type = 'bar', name = 'Movie')
+
+fig <- fig %>% add_trace(y = ~tvshow_count, name = 'TV Show')
+
+fig <- fig %>% layout(xaxis=list(categoryorder = "array", categoryarray = CountriesFinal$country, title="Country"), yaxis = list(title = 'Amount of content'), barmode = 'stack', title = 'top 10 countries by produced contetnt ( Movies )')
+
+fig
+
+
+
+# united states in leading in countries over all , countries for far east asian tend to produce more tv shows than movies ( japan , south korea ,taiwan and singapore)
+```
+
+
+```{r}
+
+# exploring by time
+
+library(lubridate)
+
+# change date_added column type 
+
+NFTitles$date_added <- as.Date(NFTitles$date_added, format = "%B %d, %Y")
+
+
+# add all title count by date
+T_by_date <- NFTitles %>% group_by(date_added,type) %>% summarise(count_on_day = n()) %>% 
+            ungroup() %>% group_by(type) %>% mutate(total_number_of_content = cumsum(count_on_day))
+
+# plot titles by year
+
+fig2 <- plot_ly(T_by_date, x = ~date_added, y = ~total_number_of_content, color = ~type, type = 'scatter', mode = 'lines', colors=c("#bd3939",  "#9addbd", "#399ba3")) 
+fig2 <- fig2 %>% layout(yaxis = list(title = 'Total Count'), xaxis = list(title = 'Year',nticks=8), title="Amount of Content by Time") 
+
+
+
+
+fig2
+
+
+# looks like 2016 was the year that production took a great increase with exponential level , with movies leading more than 2x tv shows .
+```
+
+
+```{r}
+# titles by rating 
+
+T_by_rating <- na.omit(NFTitles %>% group_by(rating,type)%>% 
+  summarise(count = n()))
+
+RatingsFinal <- reshape(data=data.frame(T_by_rating),idvar="rating",
+                          v.names = "count",
+                          timevar = "type",
+                          direction="wide")
+
+names(RatingsFinal)[2] <- "movie_count"
+names(RatingsFinal)[3] <- "tvshow_count"
+
+figure3 <- plot_ly(RatingsFinal, x = ~rating, y = ~movie_count, type = 'bar', name = 'Movie')
+figure3 <- figure3 %>% add_trace(y = ~tvshow_count, name = 'TV Show')
+figure3 <- figure3 %>% layout(yaxis = list(title = 'Total Count'),
+                        xaxis = list(title = 'Rating'),
+                        barmode = 'stack', 
+                        title="Content By Rating (Movie and TV Show)")
+figure3
+
+# most contetnt are tv-ma rated , then tv-14 
+
+```
+
+```{r}
+# movies by duration 
+
+#DurationLst <- strsplit(NFTitles$duration, split = ", ")
+
+# Duration_Countries <- na.omit(data.frame(type = rep(NFTitles$duration, sapply(DurationLst, length)), country = unlist(DurationLst))) %>% 
+#   group_by(duration, type) %>%
+#   summarise(count = n())
+
+#CountryLst
+
+
+
+
+duration_country_M<-na.omit(NFTitles[NFTitles$type=="Movie",][,c("country", "duration")])
+DCountry <- strsplit(duration_country_M$country, split = ", ")
+
+DurationCountryFinalM <- data.frame(duration = rep(duration_country_M$duration, sapply(DCountry, length)), country = unlist(DCountry))
+
+# take only duration in minutes not in seasons
+
+DurationCountryFinalM$duration <- as.numeric(gsub(" min","", DurationCountryFinalM$duration))
+
+# take a subse , only top 20 producing countries
+
+duration_country_subset= c("United States", "India", "United Kingdom", "Canada", "France", "Japan", "Spain", "South Korea", "Mexico", "Australia", "Taiwan","Italy","Turkey","Brazil","Thailand","Colombia","Taiwan","Singapore")
+
+
+
+DurationCountryFinalM_subset <- DurationCountryFinalM[DurationCountryFinalM$country %in% duration_country_subset,]
+
+
+# plot duration by top 20 producing counties
+
+fig4 <- plot_ly(DurationCountryFinalM_subset, y = ~duration, color = ~country, type = "box")
+fig84<- fig4 %>% layout(xaxis=list(title="Country"), yaxis = list(title = 'Duration (in min)'), 
+        title="Box-Plots Of Movie Duration In Top 11 Countries")
+
+fig4
+
+
+# india longest with 127 min , then south korea 111 then taiwan 106
+
+
+     
+                      
+
+
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
