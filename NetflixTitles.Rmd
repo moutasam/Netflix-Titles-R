@@ -5,6 +5,15 @@ output: html_notebook
 
 # This is an EDA project in R , using netflix titles data set downloaded from kaggel throught the URL : https://www.kaggle.com/datasets/shivamb/netflix-shows/download?datasetVersionNumber=5 
 
+# research Questions :
+<!-- 1- what is the rate of tv shows to movies production ? -->
+<!-- 2- which countries produce the most of both types ? -->
+<!-- 3- most and least popular generes by production -->
+<!-- 4- who tend to have longest movies duration ? -->
+<!-- 5- what type of movies ratings are most produced ? -->
+
+
+
 ```{r}
 # reading the dataset and filling any emprty cell with the value NA
 
@@ -227,16 +236,6 @@ figure3
 ```{r}
 # movies by duration 
 
-#DurationLst <- strsplit(NFTitles$duration, split = ", ")
-
-# Duration_Countries <- na.omit(data.frame(type = rep(NFTitles$duration, sapply(DurationLst, length)), country = unlist(DurationLst))) %>% 
-#   group_by(duration, type) %>%
-#   summarise(count = n())
-
-#CountryLst
-
-
-
 
 duration_country_M<-na.omit(NFTitles[NFTitles$type=="Movie",][,c("country", "duration")])
 DCountry <- strsplit(duration_country_M$country, split = ", ")
@@ -277,14 +276,35 @@ fig4
 ```
 
 ```{r}
+# Investigate South Korea and Taiwan tv shows duration 
 
-```
+# chosse the two countries and assig data to new df
 
-```{r}
+sk_ta_df <- NFTitles %>% filter(country %in% c("South Korea", "Taiwan"))  %>% select(country,type,release_year,rating,duration,listed_in) 
 
-```
 
-```{r}
+# clean the duration column  
+
+sk_ta_df_tv <- filter(sk_ta_df,type == "TV Show")  
+sk_ta_df_tv$duration <- gsub(" Season","",sk_ta_df_tv$duration) 
+sk_ta_df_tv$duration <- gsub("s","",sk_ta_df_tv$duration)
+
+# plot the tv shows duration for both countries
+
+figure5 <- plot_ly(sk_ta_df_tv %>% group_by(duration) %>% summarise(count = n()), x = ~duration, y = ~count, type = 'bar')
+figure5<- figure5 %>% layout(yaxis = list(title = 'Total Count'),
+                        xaxis = list(title = 'Number Of Seasons'),
+                        barmode = 'stack', 
+                        title="TV shows duration in South Korea")
+figure5
+
+# Most TV Shows (90%) in South Korea and Taiwan tend to be short 1 season only
+# snd on the opposite their movies tend to be above average ( usually long ) so maby if they reduce the duration of movies produced they would gain more popularity and production will increse .
+
+
+
+
+
 
 ```
 
