@@ -1,17 +1,22 @@
 
 
-
+library(shiny)
 library(shinydashboard)
+
+
 
 
 
 
 dashboardPage(
   dashboardHeader(title='Netflix Titles EDA'),
+  
+  
   dashboardSidebar(
     sidebarUserPanel("Netflix Titles",
                      image = 'netflix.png' ),
     sidebarMenu(
+      menuItem("General Info", tabName = "General", icon = icon("exclamation-circle")),
       menuItem("By Type", tabName = "Type", icon = icon("file")),
       menuItem("By Country", tabName = "Country", icon = icon("map-marker")),
       menuItem("By Genere", tabName = "Genre", icon = icon("database")),
@@ -24,16 +29,51 @@ dashboardPage(
     
      selectizeInput("dataset", "Choose Data set",
                    choices="NetflixTitle.csv")
+    
+    , tags$footer("")
+    , tags$footer("Done by : ")
+    , tags$footer("Al Mutasim Bakathir Al Kindi")
   ),
+  
+ 
   
   dashboardBody(
     tabItems(
+      
+      tabItem(tabName = "General",tabsetPanel(
+        tabsetPanel(
+          tabPanel("The Dataset",
+                   h2("Introduction:"),
+                   h3("This is an EDA project in R , using netflix titles data 
+                      set downloaded from kaggel."),
+                   
+                   fluidPage(
+                     tags$h3("The Dataset URL"),
+                     tags$a(href="https://www.kaggle.com/datasets/shivamb/netflix-shows",
+                            "NetFlix Shows Titles"),
+                   ),
+                   
+                   
+                   h3("Total number of Rows: 8,807"),
+                   h3("Total number of Columns : 12 ")
+                  
+                
+          ),
+          tabPanel("Research Questions",
+                   h3("1. what is the rate of tv shows to movies production ?"),
+                   h3("2. which countries produce the most of both types ?"),
+                   h3("3. most and least popular generes by production ?"),
+                   h3("4. who tend to have longest movies duration ?"),
+                   h3("5. what type of movies ratings are most produced ?")
+          )
+        ))),  
     tabItem(tabName = "Type",tabsetPanel(
                tabsetPanel(
                  tabPanel("Plot",
                           fluidRow(
                             column(width = 12,
-                                   plotOutput("type") 
+                                   plotOutput("type") ,
+                                   h3("* Movies produced are more than double TV-Shows")
                             )
                           )
                  ),
@@ -50,7 +90,15 @@ dashboardPage(
         tabPanel("Plot",
                  fluidRow(
                    column(10, plotOutput("genrestop")),
-                   column(10, plotOutput("genresleast") 
+                   column(10, plotOutput("genresleast") ,
+                   h3("* International Movies / TV Shows are showing up as the 
+                      dominant category in both Movies and TV Shows, followed 
+                      by Dramas and Comedies."),
+                   h3("* The least desired genres in Movies are :  LGBTQ , 
+                      Sports and Sci-fi & Fantasy ."),
+                   h3("* The least desired genres in Tv-Shows are : Classic and
+                      Culture ,|Stand-up comedy and Sci-Fi and Fanatsy."),
+                          
                    )
                  )
         ),
@@ -68,7 +116,13 @@ dashboardPage(
         tabPanel("Plot",
                  fluidRow(
                    column(width = 12,
-                          plotlyOutput("country") 
+                          plotlyOutput("country") ,
+                          h3("* The United States is the leading country by 
+                             content production followed by India then United 
+                             Kingdom ."),
+                          h3("* Japan , South Korea ,Taiwan and Singapore are 
+                             producing more Tv-shows than Movies."),
+                          
                    )
                  )
         ),
@@ -86,7 +140,11 @@ dashboardPage(
         tabPanel("Plot",
                  fluidRow(
                    column(width = 12,
-                          plotlyOutput("year") 
+                          plotlyOutput("year") ,
+                          h3("* 2016 was the year that production took-off 
+                             exponentially , with Movies producing at almost 2
+                             x the Tv-Shows ."),
+                          
                    )
                  )
         ),
@@ -104,7 +162,10 @@ dashboardPage(
         tabPanel("Plot",
                  fluidRow(
                    column(width = 12,
-                          plotlyOutput("rating") 
+                          plotlyOutput("rating") ,
+                          h3("* Most produced contetnt are TV-MA rated , 
+                             then TV-14."),
+                          
                    )
                  )
         ),
@@ -122,7 +183,11 @@ dashboardPage(
         tabPanel("Plot",
                  fluidRow(
                    column(width = 12,
-                          plotlyOutput("duration_movies") 
+                          plotlyOutput("duration_movies") ,
+                          h3("* India have the longest avg movie duration 
+                             (127 min) , then South Korea (111 min) ,then 
+                             Taiwan (106 min)."),
+                          
                    )
                  )
         ),
@@ -140,7 +205,10 @@ dashboardPage(
         tabPanel("Plot",
                  fluidRow(
                    column(width = 12,
-                          plotlyOutput("SPI_1") 
+                          plotlyOutput("SPI_1") ,
+                          h3("* Most TV Shows (90%) in South Korea and Taiwan 
+                             tend to be short (1 season only) ."),
+                          
                    )
                  )
         ),
@@ -173,19 +241,18 @@ dashboardPage(
         ),
         tabPanel("Future Work",h4("Integrate the current dataset with IMDB or Rotten Tomatoes and add more attributes to the research and analysis like (User and Critics Ratings)."),
                   h4("Try to model the system into and create a prediction system using ML and maybe regression")
+        ))))
+    ) # end of tab items
+    
+    # , hr(),
+    # print("Done by : Al Mutasim Bakathir Al Kindi")
+  ) # end of dashboard body
+)# end of dashboard page
+    
                  
-                 )
-      )
-    )
-    )
-    
-    
-    
-    
-    
-    )
-  )
-)
+         
+  
+
 
       
 

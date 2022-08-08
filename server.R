@@ -9,6 +9,16 @@
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
+  
+  
+  
+  
+  server = function (input,output){
+    output$summaryDset <- renderPrint({
+      print(summary(NFTitles)) 
+    })}
+  
+  
   # type Output plot and table
   output$type <- renderPlot(
     T_by_type %>%
